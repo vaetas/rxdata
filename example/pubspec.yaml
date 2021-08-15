@@ -1,0 +1,25 @@
+name: example
+description: A new Flutter project.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  collection: ^1.15.0
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^7.1.0
+  hive_flutter: ^1.1.0
+  http: ^0.13.3
+  intl: ^0.17.0
+  rxdata:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

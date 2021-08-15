@@ -1,0 +1,20 @@
+name: rxdata
+description: RxData allows to delegate fetching and caching behavior for your data.
+version: 0.1.0
+homepage: https://github.com/vaetas/rxdata
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^7.1.0
+
+dev_dependencies:
+  flutter_lints: ^1.0.4
+  flutter_test:
+    sdk: flutter
+
+flutter:
