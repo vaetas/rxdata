@@ -1,7 +1,7 @@
 # RxData for Flutter
 
 RxData allows to delegate fetching and caching behavior for your data. Uses `flutter_bloc` on the
-background.
+background. Inspired by [Revolut's RxData library](https://github.com/revolut-mobile/RxData).
 
 ## Install
 
