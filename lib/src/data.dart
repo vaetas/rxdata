@@ -28,10 +28,11 @@ class Data<V, E> {
 
   /// Create copy of this [Data] object with new params.
   Data<V, E> copyWith({
-    bool? isLoading,
     V? value,
     E? error,
+    bool? isLoading,
   }) {
+    print('[Data.copyWith] $value $error $isLoading');
     return Data(
       value: value ?? this.value,
       error: error ?? this.error,

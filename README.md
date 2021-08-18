@@ -17,8 +17,10 @@ First, define `DataDelagete` object and specify `Data` type and `Exception` type
 ```dart
 
 final dataDelegate = DataDelegate<ApiResponse, Exception>(
-  fromNetwork: () async {
-    return getRequest();
+  fromNetwork: () async* {
+    final response = await getRequest();
+   
+    yield response;
   },
   fromStorage: () async {
     return loadFromSqlite();

@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/src/data.dart';
 
 /// Delegates fetching and caching behavior of specified [Data] object.
-class DataDelegate<V, E extends Exception> extends Cubit<Data<V, E>> {
+class DataDelegate<V, E> extends Cubit<Data<V, E>> {
   DataDelegate({
     required this.fromNetwork,
     this.fromMemory,
@@ -56,34 +56,72 @@ class DataDelegate<V, E extends Exception> extends Cubit<Data<V, E>> {
     }
   }
 
+  void _setLocked(bool enabled) {
+    print('[DataDelegate._setLocked] $enabled');
+    _locked = enabled;
+  }
+
   Future<void> _fetch() async {
     if (_locked) {
       return;
     }
 
-    _locked = true;
+    _setLocked(true);
     emit(state.copyWith(isLoading: true));
 
     try {
-      final response = await fromNetwork();
-      emit(Data(value: response));
+      await for (final event in fromNetwork()) {
+        print('[DataDelegate._fetch] EVENT');
+        emit(Data(value: event));
+        toMemory?.call(event);
+        await toStorage?.call(event);
+      }
+    } catch (e) {
+      if (e is E) {
+        // .copyWith throws a type error once in a time:
+        // type '_Exception' is not a subtype of type 'Null' of 'error'
 
-      toMemory?.call(response);
-      await toStorage?.call(response);
-    } on E catch (e) {
-      emit(state.copyWith(error: e, isLoading: false));
+        // emit(state.copyWith(error: e as E));
+        emit(
+          Data(
+            value: state.value,
+            error: e as E,
+          ),
+        );
+      } else {
+        throw ArgumentError(
+          'Exception ${e.runtimeType} is not subtype of E in Data<V, E>.'
+          'Ensure you only throw exceptions of type E.',
+        );
+      }
+    } finally {
+      emit(state.copyWith(isLoading: false));
     }
-    _locked = false;
+    _setLocked(false);
   }
 
-  /// Fetch data using [fromNetwork] again. If you set `clearCache` to true,
-  /// cache will be first cleared using [onClearCache].
-  Future<void> reload({bool clearCache = false}) async {
-    if (clearCache) {
-      await this.clearCache();
+  /// Fetch data using [fromNetwork] again. Returns `false` if delegate
+  /// is locked and could not be reloaded.
+  ///
+  /// If you set `force` to true then value, error, and cache is cleared.
+  Future<bool> reload({bool force = false}) async {
+    if (_locked) {
+      print('[DataDelegate.reload] WARNING: Cannot reload locked delegate.');
+      return false;
     }
 
-    await _fetch();
+    if (force) {
+      await clearCache();
+      emit(const Data(isLoading: true));
+    }
+
+    // ignore: unawaited_futures
+    try {
+      _fetch();
+    } catch (e, s) {
+      print(e);
+    }
+    return true;
   }
 
   /// Clear cache using [onClearCache].
@@ -92,7 +130,7 @@ class DataDelegate<V, E extends Exception> extends Cubit<Data<V, E>> {
   }
 }
 
-typedef _FromNetwork<V> = Future<V> Function();
+typedef _FromNetwork<V> = Stream<V> Function();
 
 typedef _FromMemory<V> = V? Function();
 typedef _ToMemory<V> = void Function(V value);

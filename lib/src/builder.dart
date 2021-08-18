@@ -3,8 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/rxdata.dart';
 
 /// Wrapper around [BlocBuilder] for shorter generics definition.
-class DataBuilder<V, E extends Exception>
-    extends BlocBuilder<DataDelegate<V, E>, Data<V, E>> {
+class DataBuilder<V, E> extends BlocBuilder<DataDelegate<V, E>, Data<V, E>> {
   const DataBuilder({
     Key? key,
     required BlocWidgetBuilder<Data<V, E>> builder,
@@ -14,8 +13,7 @@ class DataBuilder<V, E extends Exception>
 }
 
 /// Wrapper around [BlocListener] for shorter generics definition.
-class DataListener<V, E extends Exception>
-    extends BlocListener<DataDelegate<V, E>, Data<V, E>> {
+class DataListener<V, E> extends BlocListener<DataDelegate<V, E>, Data<V, E>> {
   const DataListener({
     Key? key,
     required BlocWidgetListener<Data<V, E>> listener,
@@ -32,8 +30,7 @@ class DataListener<V, E extends Exception>
 }
 
 /// Wrapper around [BlocConsumer] for shorter generics definition.
-class DataConsumer<V, E extends Exception>
-    extends BlocConsumer<DataDelegate<V, E>, Data<V, E>> {
+class DataConsumer<V, E> extends BlocConsumer<DataDelegate<V, E>, Data<V, E>> {
   const DataConsumer({
     Key? key,
     required BlocWidgetListener<Data<V, E>> listener,

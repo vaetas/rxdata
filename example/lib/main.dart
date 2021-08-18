@@ -36,15 +36,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final DataDelegate<ApiResponse, Exception> dataDelegate;
+  late final DataDelegate<ApiResponse, Object> dataDelegate;
 
   bool wasErrorThrown = false;
 
   @override
   void initState() {
     super.initState();
-    dataDelegate = DataDelegate<ApiResponse, Exception>(
-      fromNetwork: () async {
+    dataDelegate = DataDelegate(
+      fromNetwork: () async* {
         final now = DateTime.now();
 
         // https://api.coincap.io/v2/assets/bitcoin/history?interval=m1&start=1629051861939&end=1629052461939
@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
           throw Exception(response.body);
         }
 
-        return ApiResponse.fromJson(
+        yield ApiResponse.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       },
@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DataBuilder<ApiResponse, Exception>(
+      body: DataBuilder<ApiResponse, Object>(
         bloc: dataDelegate,
         builder: (context, state) {
           return CustomScrollView(
@@ -112,13 +112,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text('Example'),
                 pinned: true,
                 actions: [
-                  IconButton(
-                    tooltip: 'Reload data',
-                    // ignore: unnecessary_lambdas
-                    onPressed: () {
-                      dataDelegate.reload();
-                    },
-                    icon: const Icon(Icons.refresh),
+                  InkWell(
+                    onTap: dataDelegate.reload,
+                    onLongPress: () => dataDelegate.reload(force: true),
+                    child: const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Icon(Icons.refresh),
+                    ),
                   ),
                 ],
               ),
