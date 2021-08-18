@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -104,8 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocBuilder<DataDelegate<ApiResponse, Exception>,
-          Data<ApiResponse, Exception>>(
+      body: DataBuilder<ApiResponse, Exception>(
         bloc: dataDelegate,
         builder: (context, state) {
           return CustomScrollView(
@@ -167,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: Text(
                             priceFormat.format(num.parse(e.priceUsd)),
                           ),
-                          subtitle: Text(e.date.toIso8601String()),
+                          subtitle: Text(e.date.toLocal().toIso8601String()),
                         );
                       }).toList(),
                     ),
