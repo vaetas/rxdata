@@ -144,34 +144,32 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-              if (state.error.isValue)
+              if (state.hasError)
                 SliverToBoxAdapter(
                   child: Container(
                     color: Colors.orangeAccent,
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.all(10),
-                    child: Text(state.error.value.toString()),
+                    child: Text(state.error.toString()),
                   ),
                 ),
-              state.value.when(
-                () => const SliverToBoxAdapter(
+              if (state.hasValue)
+                SliverList(
+                  delegate: SliverChildListDelegate(
+                    state.value!.data.map((e) {
+                      return ListTile(
+                        title: Text(
+                          priceFormat.format(num.parse(e.priceUsd)),
+                        ),
+                        subtitle: Text(e.date.toLocal().toIso8601String()),
+                      );
+                    }).toList(),
+                  ),
+                )
+              else
+                const SliverToBoxAdapter(
                   child: Text('No data'),
                 ),
-                (value) {
-                  return SliverList(
-                    delegate: SliverChildListDelegate(
-                      value.data.map((e) {
-                        return ListTile(
-                          title: Text(
-                            priceFormat.format(num.parse(e.priceUsd)),
-                          ),
-                          subtitle: Text(e.date.toLocal().toIso8601String()),
-                        );
-                      }).toList(),
-                    ),
-                  );
-                },
-              ),
             ],
           );
         },

@@ -1,38 +1,30 @@
-import 'package:rxdata/src/option.dart';
-
-/// Wrapper around your data of type [E] (JSON, or your custom class).
+/// Wrapper around your data of type [V].
 ///
 /// [E] is a type for a possible exceptions. You can either provide your own
 /// exception class/enum or use [Object].
 class Data<V, E> {
-  factory Data({
-    bool isLoading = false,
-    V? value,
-    E? error,
-  }) {
-    return Data._(
-      value: value == null ? Option<V>.nothing() : Option.value(value),
-      error: error == null ? Option<E>.nothing() : Option.value(error),
-      isLoading: isLoading,
-    );
-  }
-
-  const Data._({
-    required this.value,
-    required this.error,
+  const Data({
+    this.value,
+    this.error,
     this.isLoading = false,
   });
 
-  /// Current value that can either be null [Nothing] or [Just] value.
-  final Option<V> value;
+  /// Current value
+  final V? value;
 
   /// Current error
-  final Option<E> error;
+  final E? error;
 
   /// Whether you can except the data to refresh soon. Remember that you can
   /// have [isLoading] set to true and still have some value and/or error at the
   /// same time.
   final bool isLoading;
+
+  /// If [value] is not null
+  bool get hasValue => value != null;
+
+  /// If [error] is not null
+  bool get hasError => error != null;
 
   /// Create copy of this [Data] object with new params.
   Data<V, E> copyWith({
@@ -40,9 +32,9 @@ class Data<V, E> {
     V? value,
     E? error,
   }) {
-    return Data._(
-      value: value != null ? Option.value(value) : this.value,
-      error: error != null ? Option.value(error) : this.error,
+    return Data(
+      value: value ?? this.value,
+      error: error ?? this.error,
       isLoading: isLoading ?? this.isLoading,
     );
   }
