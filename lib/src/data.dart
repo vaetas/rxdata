@@ -32,7 +32,6 @@ class Data<V, E> {
     E? error,
     bool? isLoading,
   }) {
-    print('[Data.copyWith] $value $error $isLoading');
     return Data(
       value: value ?? this.value,
       error: error ?? this.error,

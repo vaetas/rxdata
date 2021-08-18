@@ -57,7 +57,6 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
   }
 
   void _setLocked(bool enabled) {
-    print('[DataDelegate._setLocked] $enabled');
     _locked = enabled;
   }
 
@@ -71,7 +70,6 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
 
     try {
       await for (final event in fromNetwork()) {
-        print('[DataDelegate._fetch] EVENT');
         emit(Data(value: event));
         toMemory?.call(event);
         await toStorage?.call(event);
@@ -106,7 +104,6 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
   /// If you set `force` to true then value, error, and cache is cleared.
   Future<bool> reload({bool force = false}) async {
     if (_locked) {
-      print('[DataDelegate.reload] WARNING: Cannot reload locked delegate.');
       return false;
     }
 
@@ -116,11 +113,7 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
     }
 
     // ignore: unawaited_futures
-    try {
-      _fetch();
-    } catch (e, s) {
-      print(e);
-    }
+    _fetch();
     return true;
   }
 

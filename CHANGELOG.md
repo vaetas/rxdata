@@ -1,6 +1,10 @@
+## 0.2.1
+
+* fix: remove prints
+
 ## 0.2.0
 
-* feat: use streams 
+* feat: use streams
 * feat: add DataBuilder, DateListener, and DataConsumer
 * feat: remove Option type from Data
 
