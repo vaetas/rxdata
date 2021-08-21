@@ -43,7 +43,7 @@ class ExampleWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DataBuilder<ApiResponse, Object>(
+      body: DataBuilder<ApiResponse, Exception>(
         bloc: dataDelegate,
         builder: (context, state) {
           if (state.hasValue) {
