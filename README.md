@@ -19,7 +19,7 @@ First, define `DataDelagete` object and specify `Data` type and `Exception` type
 final dataDelegate = DataDelegate<ApiResponse, Exception>(
   fromNetwork: () async* {
     final response = await getRequest();
-   
+
     yield response;
   },
   fromStorage: () async {
@@ -31,7 +31,8 @@ final dataDelegate = DataDelegate<ApiResponse, Exception>(
 );
 ```
 
-Then, use `BlocBuilder` to build your UI.
+Then, use `DataBuilder` to build your UI. `DataBuilder` is only a wrapper around the `BlocBuilder`.
+You can also use `DataListener` and `DataConsumer`.
 
 ```dart
 class ExampleWidget extends StatelessWidget {
@@ -41,19 +42,28 @@ class ExampleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DataDelegate<ApiResponse, Exception>,
-        Data<ApiResponse, Exception>>(
-      bloc: dataDelegate,
-      builder: (context, state) {
-        return state.value.when(
-              () => Text('No data'),
-              (value) => Text(value.toString()),
-        );
-      },
+    return Scaffold(
+      body: DataBuilder<ApiResponse, Object>(
+        bloc: dataDelegate,
+        builder: (context, state) {
+          if (state.hasValue) {
+            return Text(state.value!.toString());
+          } else {
+            return Text('No data');
+          }
+        },
+      ),
     );
   }
 }
 ```
+
+`Data` class has 3 fields:
+
+* `value`: e.g. `ApiResponse` or whatever data you need;
+* `error`: optional error, you might have `error` and `value` at the same time because `value` is
+  not deleted when error is thrown;
+* `isLoading`: if you can expect `value` or `error` to change soon.
 
 You can then call `dataDelegate.reload()` to fetch data again. Delegate will handle caching by
 itself, provided that you specified your callbacks.
