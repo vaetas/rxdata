@@ -3,22 +3,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/rxdata.dart';
 
 /// Wrapper around [BlocBuilder] for shorter generics definition.
-class DataBuilder<V, E> extends BlocBuilder<DataDelegate<V, E>, Data<V, E>> {
+class DataBuilder<V> extends BlocBuilder<DataDelegate<V>, Data<V>> {
   const DataBuilder({
     Key? key,
-    required BlocWidgetBuilder<Data<V, E>> builder,
-    DataDelegate<V, E>? bloc,
-    BlocBuilderCondition<Data<V, E>>? buildWhen,
+    required BlocWidgetBuilder<Data<V>> builder,
+    DataDelegate<V>? bloc,
+    BlocBuilderCondition<Data<V>>? buildWhen,
   }) : super(key: key, bloc: bloc, buildWhen: buildWhen, builder: builder);
 }
 
 /// Wrapper around [BlocListener] for shorter generics definition.
-class DataListener<V, E> extends BlocListener<DataDelegate<V, E>, Data<V, E>> {
+class DataListener<V> extends BlocListener<DataDelegate<V>, Data<V>> {
   const DataListener({
     Key? key,
-    required BlocWidgetListener<Data<V, E>> listener,
-    DataDelegate<V, E>? bloc,
-    BlocListenerCondition<Data<V, E>>? listenWhen,
+    required BlocWidgetListener<Data<V>> listener,
+    DataDelegate<V>? bloc,
+    BlocListenerCondition<Data<V>>? listenWhen,
     Widget? child,
   }) : super(
           key: key,
@@ -30,14 +30,14 @@ class DataListener<V, E> extends BlocListener<DataDelegate<V, E>, Data<V, E>> {
 }
 
 /// Wrapper around [BlocConsumer] for shorter generics definition.
-class DataConsumer<V, E> extends BlocConsumer<DataDelegate<V, E>, Data<V, E>> {
+class DataConsumer<V> extends BlocConsumer<DataDelegate<V>, Data<V>> {
   const DataConsumer({
     Key? key,
-    required BlocWidgetListener<Data<V, E>> listener,
-    required BlocWidgetBuilder<Data<V, E>> builder,
-    DataDelegate<V, E>? bloc,
-    BlocListenerCondition<Data<V, E>>? listenWhen,
-    BlocBuilderCondition<Data<V, E>>? buildWhen,
+    required BlocWidgetListener<Data<V>> listener,
+    required BlocWidgetBuilder<Data<V>> builder,
+    DataDelegate<V>? bloc,
+    BlocListenerCondition<Data<V>>? listenWhen,
+    BlocBuilderCondition<Data<V>>? buildWhen,
   }) : super(
           key: key,
           listener: listener,

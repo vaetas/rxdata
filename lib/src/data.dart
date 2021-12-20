@@ -1,8 +1,5 @@
 /// Wrapper around your data of type [V].
-///
-/// [E] is a type for a possible exceptions. You can either provide your own
-/// exception class/enum or use [Object].
-class Data<V, E> {
+class Data<V> {
   const Data({
     this.value,
     this.error,
@@ -13,7 +10,7 @@ class Data<V, E> {
   final V? value;
 
   /// Current error
-  final E? error;
+  final Object? error;
 
   /// Whether you can except the data to refresh soon. Remember that you can
   /// have [isLoading] set to true and still have some value and/or error at the
@@ -27,9 +24,9 @@ class Data<V, E> {
   bool get hasError => error != null;
 
   /// Create copy of this [Data] object with new params.
-  Data<V, E> copyWith({
+  Data<V> copyWith({
     V? value,
-    E? error,
+    Object? error,
     bool? isLoading,
   }) {
     return Data(

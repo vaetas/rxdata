@@ -36,7 +36,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final DataDelegate<ApiResponse, Object> dataDelegate;
+  late final DataDelegate<ApiResponse> dataDelegate;
 
   bool wasErrorThrown = false;
 
@@ -79,6 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       fromStorage: () async {
+        // Uncomment line below to simulate storage IO failure.
+        // throw Exception('Failed to load from storage');
+
         print('[_HomeScreenState.initState] fromStorage');
         final box = await Hive.openBox<String>('storage');
         final data = box.get('data');
@@ -103,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DataBuilder<ApiResponse, Object>(
+      body: DataBuilder<ApiResponse>(
         bloc: dataDelegate,
         builder: (context, state) {
           return CustomScrollView(

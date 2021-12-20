@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/src/data.dart';
 
 /// Delegates fetching and caching behavior of specified [Data] object.
-class DataDelegate<V, E> extends Cubit<Data<V, E>> {
+class DataDelegate<V> extends Cubit<Data<V>> {
   DataDelegate({
     required this.fromNetwork,
     this.fromMemory,
@@ -10,7 +10,7 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
     this.fromStorage,
     this.toStorage,
     this.onClearCache,
-  }) : super(Data<V, E>(isLoading: true)) {
+  }) : super(Data<V>(isLoading: true)) {
     _init();
   }
 
@@ -37,22 +37,29 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
   bool _locked = false;
 
   Future<void> _init() async {
-    final memoryValue = fromMemory?.call();
-    if (memoryValue != null) {
-      emit(Data(value: memoryValue));
-    } else {
-      await _loadFromStorage();
+    try {
+      final memoryValue = fromMemory?.call();
+      if (memoryValue != null) {
+        emit(Data(value: memoryValue));
+      } else {
+        await _loadFromStorage();
+      }
+    } catch (e, s) {
+      onError(e, s);
     }
 
     await _fetch();
   }
 
   Future<void> _loadFromStorage() async {
-    final value = await fromStorage?.call();
-
-    if (value != null) {
-      emit(state.copyWith(value: value));
-      toMemory?.call(value);
+    try {
+      final value = await fromStorage?.call();
+      if (value != null) {
+        emit(state.copyWith(value: value));
+        toMemory?.call(value);
+      }
+    } catch (e, s) {
+      onError(e, s);
     }
   }
 
@@ -74,24 +81,8 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
         toMemory?.call(event);
         await toStorage?.call(event);
       }
-    } catch (e) {
-      if (e is E) {
-        // .copyWith throws a type error once in a time:
-        // type '_Exception' is not a subtype of type 'Null' of 'error'
-
-        // emit(state.copyWith(error: e as E));
-        emit(
-          Data(
-            value: state.value,
-            error: e as E,
-          ),
-        );
-      } else {
-        throw ArgumentError(
-          'Exception ${e.runtimeType} is not subtype of E in Data<V, E>.'
-          'Ensure you only throw exceptions of type E.',
-        );
-      }
+    } catch (e, s) {
+      onError(e, s);
     } finally {
       emit(state.copyWith(isLoading: false));
     }
@@ -120,6 +111,13 @@ class DataDelegate<V, E> extends Cubit<Data<V, E>> {
   /// Clear cache using [onClearCache].
   Future<void> clearCache() async {
     await onClearCache?.call();
+  }
+
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    print('[DataDelegate.onError] ERROR: $error');
+    emit(state.copyWith(error: error));
+    super.onError(error, stackTrace);
   }
 }
 

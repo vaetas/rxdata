@@ -7,19 +7,19 @@ background. Inspired by [Revolut's RxData library](https://github.com/revolut-mo
 
 ```shell
 flutter pub add rxdata
-flutter pub add flutter_bloc
 ```
 
 ## Usage
 
-First, define `DataDelagete` object and specify `Data` type and `Exception` type.
+First, define `DataDelagete` object and specify `Data` type.
 
 ```dart
 
 final dataDelegate = DataDelegate<ApiResponse, Exception>(
   fromNetwork: () async* {
+    // [fromNetwork] can yield multiple values before closing. You can sequentially fetch data and 
+    // and yield them step by step.
     final response = await getRequest();
-
     yield response;
   },
   fromStorage: () async {
@@ -38,19 +38,21 @@ You can also use `DataListener` and `DataConsumer`.
 class ExampleWidget extends StatelessWidget {
   const ExampleWidget({Key? key, required this.dataDelegate}) : super(key: key);
 
-  final DataDelegate<ApiResponse, Exception> dataDelegate;
+  final DataDelegate<ApiResponse> dataDelegate;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DataBuilder<ApiResponse, Exception>(
+      body: DataBuilder<ApiResponse>(
         bloc: dataDelegate,
         builder: (context, state) {
-          if (state.hasValue) {
-            return Text(state.value!.toString());
-          } else {
-            return Text('No data');
-          }
+          return Column(
+            children: [
+              if (state.isLoading) const CircularProgressIndicator(),
+              if (state.hasError) Text(state.error!.toString()),
+              if (state.hasValue) Text(state.value!.toString()),
+            ],
+          );
         },
       ),
     );
@@ -68,4 +70,5 @@ class ExampleWidget extends StatelessWidget {
 You can then call `dataDelegate.reload()` to fetch data again. Delegate will handle caching by
 itself, provided that you specified your callbacks.
 
-See `example` project for full usage.
+See [example project](https://github.com/vaetas/rxdata/blob/main/example/lib/main.dart) for full
+usage.
