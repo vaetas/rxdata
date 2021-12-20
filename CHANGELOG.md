@@ -1,3 +1,9 @@
+## 0.3.0
+
+* BREAKING: feat: remove Error generic type
+    * Error is now type `Object?` by default. Users must remove their own error type from code.
+* chore: update dependencies
+
 ## 0.2.1
 
 * fix: remove prints
