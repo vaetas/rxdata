@@ -10,9 +10,8 @@ dependencies:
   collection: ^1.15.0
   flutter:
     sdk: flutter
-  flutter_bloc: ^7.1.0
   hive_flutter: ^1.1.0
-  http: ^0.13.3
+  http: ^0.13.4
   intl: ^0.17.0
   rxdata:
     path: ../
