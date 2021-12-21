@@ -15,7 +15,7 @@ First, define `DataDelagete` object and specify `Data` type.
 
 ```dart
 
-final dataDelegate = DataDelegate<ApiResponse, Exception>(
+final dataDelegate = DataDelegate<ApiResponse>(
   fromNetwork: () async* {
     // [fromNetwork] can yield multiple values before closing. You can sequentially fetch data and 
     // and yield them step by step.
