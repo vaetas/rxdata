@@ -23,7 +23,7 @@ final dataDelegate = DataDelegate<ApiResponse>(
     yield response;
   },
   fromStorage: () async {
-    return loadFromSqlite();
+    return loadFromSqlite('my_key');
   },
   toStorage: (value) async {
     await saveToSqlite(value, 'my_key');
