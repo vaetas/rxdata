@@ -1,3 +1,7 @@
+## 0.4.0
+
+* feat: print StackTrace on error
+
 ## 0.3.0
 
 * BREAKING: feat: remove Error generic type

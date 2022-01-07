@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/src/data.dart';
 
@@ -48,7 +49,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
       onError(e, s);
     }
 
-    await _fetch();
+    await fetch();
   }
 
   Future<void> _loadFromStorage() async {
@@ -67,7 +68,8 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     _locked = enabled;
   }
 
-  Future<void> _fetch() async {
+  /// Fetch data [fromNetwork].
+  Future<void> fetch() async {
     if (_locked) {
       return;
     }
@@ -104,7 +106,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     }
 
     // ignore: unawaited_futures
-    _fetch();
+    fetch();
     return true;
   }
 
@@ -115,7 +117,8 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
   @override
   void onError(Object error, StackTrace stackTrace) {
-    print('[DataDelegate.onError] ERROR: $error');
+    print('[$runtimeType.onError] $error');
+    debugPrintStack(stackTrace: stackTrace);
     emit(state.copyWith(error: error));
     super.onError(error, stackTrace);
   }
