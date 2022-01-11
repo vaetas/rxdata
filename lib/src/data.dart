@@ -1,5 +1,7 @@
+import 'package:equatable/equatable.dart';
+
 /// Wrapper around your data of type [V].
-class Data<V> {
+class Data<V> extends Equatable {
   const Data({
     this.value,
     this.error,
@@ -42,14 +44,5 @@ class Data<V> {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Data &&
-          runtimeType == other.runtimeType &&
-          value == other.value &&
-          error == other.error &&
-          isLoading == other.isLoading;
-
-  @override
-  int get hashCode => value.hashCode ^ error.hashCode ^ isLoading.hashCode;
+  List<Object?> get props => [value, error, isLoading];
 }
