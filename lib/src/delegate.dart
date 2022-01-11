@@ -35,7 +35,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
   /// Whether there already is ongoing network request. Only one request is
   /// allowed at the time.
-  bool _locked = false;
+  bool isLocked = false;
 
   Future<void> _init() async {
     try {
@@ -65,12 +65,12 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   }
 
   void _setLocked(bool enabled) {
-    _locked = enabled;
+    isLocked = enabled;
   }
 
   /// Fetch data [fromNetwork].
   Future<void> fetch() async {
-    if (_locked) {
+    if (isLocked) {
       return;
     }
 
@@ -91,13 +91,18 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     _setLocked(false);
   }
 
-  /// Fetch data using [fromNetwork] again. Returns `false` if delegate
-  /// is locked and could not be reloaded.
+  /// Fetch data using [fromNetwork] again. Immediately returns is [isLocked]
+  /// is `true`.
   ///
-  /// If you set `force` to true then value, error, and cache is cleared.
-  Future<bool> reload({bool force = false}) async {
-    if (_locked) {
-      return false;
+  /// If you set `force` to true then [Data.value], [Data.error] is set
+  /// to `null` and [clearCache] is called before calling [fetch].
+  ///
+  /// If your [fromNetwork] methods never ends (i.e. infinite stream), [reload]
+  /// will also never finish. In that case do not await [reload], or ensure
+  /// your [fromNetwork] method finished (timeouts etc.).
+  Future<void> reload({bool force = false}) async {
+    if (isLocked) {
+      return;
     }
 
     if (force) {
@@ -105,9 +110,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
       emit(const Data(isLoading: true));
     }
 
-    // ignore: unawaited_futures
-    fetch();
-    return true;
+    await fetch();
   }
 
   /// Clear cache using [onClearCache].
