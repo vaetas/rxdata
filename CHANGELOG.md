@@ -1,3 +1,10 @@
+## 0.5.0
+
+* feat: use equatable for data
+* feat: use BlocObserver for events
+* fix: await `DataDelegate.reload` method
+* refactor: builder widgets
+
 ## 0.4.0
 
 * feat: print StackTrace on error
