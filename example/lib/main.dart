@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:developer' as dev;
 
 import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -10,8 +12,13 @@ import 'package:rxdata/rxdata.dart';
 final priceFormat = NumberFormat.currency(name: 'USD', symbol: r'$');
 
 Future<void> main() async {
-  await Hive.initFlutter();
-  runApp(ExampleApp());
+  await BlocOverrides.runZoned(
+    () async {
+      await Hive.initFlutter();
+      runApp(ExampleApp());
+    },
+    blocObserver: SimpleBlocObserver(),
+  );
 }
 
 class ExampleApp extends StatelessWidget {
@@ -125,6 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+              CupertinoSliverRefreshControl(
+                onRefresh: dataDelegate.reload,
+              ),
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(8.0),
@@ -177,6 +187,19 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+class SimpleBlocObserver extends BlocObserver {
+  @override
+  void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
+    super.onError(bloc, error, stackTrace);
+    dev.log(
+      'Error',
+      error: error,
+      stackTrace: stackTrace,
+      name: '${bloc.runtimeType}',
     );
   }
 }

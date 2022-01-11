@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/src/data.dart';
 
@@ -120,10 +119,8 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
   @override
   void onError(Object error, StackTrace stackTrace) {
-    print('[$runtimeType.onError] $error');
-    debugPrintStack(stackTrace: stackTrace);
-    emit(state.copyWith(error: error));
     super.onError(error, stackTrace);
+    emit(state.copyWith(error: error));
   }
 }
 
