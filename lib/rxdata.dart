@@ -1,6 +1,6 @@
 library rxdata;
 
-export 'package:bloc/bloc.dart'
+export 'package:flutter_bloc/flutter_bloc.dart'
     show Bloc, BlocBase, BlocObserver, BlocOverrides, Change, Transition;
 
 export 'src/builder.dart';
