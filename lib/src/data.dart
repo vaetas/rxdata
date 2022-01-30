@@ -15,7 +15,7 @@ class Data<V> extends Equatable {
   final Object? error;
 
   /// Whether you can except the data to refresh soon. Remember that you can
-  /// have [isLoading] set to true and still have some value and/or error at the
+  /// have [isLoading] set to true and still have value and/or error at the
   /// same time.
   final bool isLoading;
 

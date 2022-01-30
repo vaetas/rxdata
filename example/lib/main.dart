@@ -74,8 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
           throw Exception('Example error. Try pressing reload icon.');
         }
 
-        final response = await http.get(uri);
         await Future<void>.delayed(const Duration(seconds: 1));
+
+        final response = await http.get(uri);
 
         if (response.statusCode != 200) {
           throw Exception(response.body);
@@ -134,6 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               CupertinoSliverRefreshControl(
                 onRefresh: dataDelegate.reload,
+              ),
+              SliverToBoxAdapter(
+                child: Text('Last updated: ${dataDelegate.lastUpdated}'),
               ),
               const SliverToBoxAdapter(
                 child: Padding(
@@ -201,6 +205,15 @@ class SimpleBlocObserver extends BlocObserver {
       stackTrace: stackTrace,
       name: '${bloc.runtimeType}',
     );
+  }
+
+  @override
+  void onChange(BlocBase bloc, Change change) {
+    super.onChange(bloc, change);
+    if (bloc is DataDelegate<ApiResponse>) {
+      final state = change.nextState as Data<ApiResponse>;
+      print('[SimpleBlocObserver.onChange] Next state $state');
+    }
   }
 }
 

@@ -36,6 +36,18 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   /// allowed at the time.
   bool isLocked = false;
 
+  /// [DateTime] of last [fromNetwork] call. This will be updated when
+  /// [fromNetwork] call either succeeds or fails. You can use this value to
+  /// decide if you need to refresh your data.
+  ///
+  /// [lastUpdated] is NOT updated after [fromStorage] or [fromMemory].
+  ///
+  /// Null [lastUpdated] means there was not a successful [fromNetwork] call
+  /// already.
+  DateTime? get lastUpdated => _lastUpdated;
+
+  DateTime? _lastUpdated;
+
   Future<void> _init() async {
     try {
       final memoryValue = fromMemory?.call();
@@ -69,24 +81,25 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
   /// Fetch data [fromNetwork].
   Future<void> fetch() async {
-    if (isLocked) {
-      return;
-    }
-
+    if (isLocked) return;
     _setLocked(true);
+
     emit(state.copyWith(isLoading: true));
 
     try {
       await for (final event in fromNetwork()) {
+        _updateLastUpdated();
         emit(Data(value: event));
         toMemory?.call(event);
         await toStorage?.call(event);
       }
     } catch (e, s) {
+      _updateLastUpdated();
       onError(e, s);
     } finally {
       emit(state.copyWith(isLoading: false));
     }
+
     _setLocked(false);
   }
 
@@ -115,6 +128,10 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   /// Clear cache using [onClearCache].
   Future<void> clearCache() async {
     await onClearCache?.call();
+  }
+
+  void _updateLastUpdated() {
+    _lastUpdated = DateTime.now();
   }
 
   @override

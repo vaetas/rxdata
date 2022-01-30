@@ -1,3 +1,7 @@
+## 0.6.0
+
+* feat: save last update datetime
+
 ## 0.5.0
 
 * feat: use equatable for data
