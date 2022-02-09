@@ -58,20 +58,17 @@ class DataDelegate<V> extends Cubit<Data<V>> {
       }
     } catch (e, s) {
       onError(e, s);
+      await clearCache();
     }
 
     await fetch();
   }
 
   Future<void> _loadFromStorage() async {
-    try {
-      final value = await fromStorage?.call();
-      if (value != null) {
-        emit(state.copyWith(value: value));
-        toMemory?.call(value);
-      }
-    } catch (e, s) {
-      onError(e, s);
+    final value = await fromStorage?.call();
+    if (value != null) {
+      emit(state.copyWith(value: value));
+      toMemory?.call(value);
     }
   }
 

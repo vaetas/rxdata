@@ -52,6 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     dataDelegate = DataDelegate(
       fromNetwork: () async* {
+        throw Exception('Failed to fetch data');
+
         final now = DateTime.now();
 
         // https://api.coincap.io/v2/assets/bitcoin/history?interval=m1&start=1629051861939&end=1629052461939
@@ -107,6 +109,15 @@ class _HomeScreenState extends State<HomeScreen> {
         } catch (e) {
           print('ERROR: $e');
         }
+      },
+      fromMemory: () {
+        print('[_HomeScreenState.initState] fromMemory');
+      },
+      toMemory: (value) {
+        print('[_HomeScreenState.initState] toMemory');
+      },
+      onClearCache: () async {
+        await Hive.deleteBoxFromDisk('storage');
       },
     );
   }
@@ -244,7 +255,7 @@ class ApiResponse {
   }
 
   @override
-  String toString() => 'ApiResponse{data: $data}';
+  String toString() => 'ApiResponse{data: [...]}';
 }
 
 class PricePoint {
