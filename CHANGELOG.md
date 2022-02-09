@@ -1,3 +1,8 @@
+## 0.7.0
+
+* feat: clear cache after memory/storage error
+* feat: ensure `onClearCache` callback is provided when using `toMemory` or `toStorage`.
+
 ## 0.6.0
 
 * feat: save last update datetime
