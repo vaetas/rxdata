@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     dataDelegate = DataDelegate(
       fromNetwork: () async* {
-        throw Exception('Failed to fetch data');
+        // throw Exception('Failed to fetch data');
 
         final now = DateTime.now();
 

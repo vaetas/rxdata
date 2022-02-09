@@ -2,6 +2,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/src/data.dart';
 
 /// Delegates fetching and caching behavior of specified [Data] object.
+///
+/// If you provide [toStorage] or [toMemory] then you must also
+/// provide [onClearCache].
+///
+/// If [toStorage] or [toMemory] throws then [onClearCache] is called.
 class DataDelegate<V> extends Cubit<Data<V>> {
   DataDelegate({
     required this.fromNetwork,
@@ -10,7 +15,12 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     this.fromStorage,
     this.toStorage,
     this.onClearCache,
-  }) : super(Data<V>(isLoading: true)) {
+  })  : assert(
+          (toStorage == null && toMemory == null) ||
+              (toStorage != null || toMemory != null) && onClearCache != null,
+          'You must provide `onClearCache` callback when using `toStorage` and/or `toMemory`.',
+        ),
+        super(Data<V>(isLoading: true)) {
     _init();
   }
 
