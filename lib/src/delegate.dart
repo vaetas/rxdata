@@ -62,7 +62,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     try {
       final memoryValue = fromMemory?.call();
       if (memoryValue != null) {
-        emit(Data(value: memoryValue));
+        _emit(Data(value: memoryValue));
       } else {
         await _loadFromStorage();
       }
@@ -74,10 +74,16 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     await fetch();
   }
 
+  void _emit(Data<V> state) {
+    if (!isClosed) {
+      emit(state);
+    }
+  }
+
   Future<void> _loadFromStorage() async {
     final value = await fromStorage?.call();
     if (value != null) {
-      emit(state.copyWith(value: value));
+      _emit(state.copyWith(value: value));
       toMemory?.call(value);
     }
   }
@@ -86,17 +92,18 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     isLocked = enabled;
   }
 
+  // TODO: Cancel stream listener on [close].
   /// Fetch data [fromNetwork].
   Future<void> fetch() async {
     if (isLocked) return;
     _setLocked(true);
 
-    emit(state.copyWith(isLoading: true));
+    _emit(state.copyWith(isLoading: true));
 
     try {
       await for (final event in fromNetwork()) {
         _updateLastUpdated();
-        emit(Data(value: event));
+        _emit(Data(value: event));
         toMemory?.call(event);
         await toStorage?.call(event);
       }
@@ -104,7 +111,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
       _updateLastUpdated();
       onError(e, s);
     } finally {
-      emit(state.copyWith(isLoading: false));
+      _emit(state.copyWith(isLoading: false));
     }
 
     _setLocked(false);
@@ -126,7 +133,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
     if (force) {
       await clearCache();
-      emit(const Data(isLoading: true));
+      _emit(const Data(isLoading: true));
     }
 
     await fetch();
@@ -144,7 +151,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   @override
   void onError(Object error, StackTrace stackTrace) {
     super.onError(error, stackTrace);
-    emit(state.copyWith(error: error));
+    _emit(state.copyWith(error: error));
   }
 }
 

@@ -1,3 +1,7 @@
+## 0.8.0
+
+* fix: prevent emit after closing delegate
+
 ## 0.7.0
 
 * feat: clear cache after memory/storage error
