@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdata/src/data.dart';
 
@@ -58,11 +60,13 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
   DateTime? _lastUpdated;
 
+  StreamSubscription<V>? _fetchSubscription;
+
   Future<void> _init() async {
     try {
       final memoryValue = fromMemory?.call();
       if (memoryValue != null) {
-        _emit(Data(value: memoryValue));
+        emit(Data(value: memoryValue));
       } else {
         await _loadFromStorage();
       }
@@ -74,16 +78,10 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     await fetch();
   }
 
-  void _emit(Data<V> state) {
-    if (!isClosed) {
-      emit(state);
-    }
-  }
-
   Future<void> _loadFromStorage() async {
     final value = await fromStorage?.call();
     if (value != null) {
-      _emit(state.copyWith(value: value));
+      emit(state.copyWith(value: value));
       toMemory?.call(value);
     }
   }
@@ -98,23 +96,26 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     if (isLocked) return;
     _setLocked(true);
 
-    _emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true));
 
     try {
-      await for (final event in fromNetwork()) {
-        _updateLastUpdated();
-        _emit(Data(value: event));
-        toMemory?.call(event);
-        await toStorage?.call(event);
-      }
+      await _fetchSubscription?.cancel();
+      _fetchSubscription = fromNetwork().listen(_fetchListener);
     } catch (e, s) {
       _updateLastUpdated();
       onError(e, s);
     } finally {
-      _emit(state.copyWith(isLoading: false));
+      emit(state.copyWith(isLoading: false));
     }
 
     _setLocked(false);
+  }
+
+  Future<void> _fetchListener(V event) async {
+    _updateLastUpdated();
+    emit(Data(value: event));
+    toMemory?.call(event);
+    await toStorage?.call(event);
   }
 
   /// Fetch data using [fromNetwork] again. Immediately returns is [isLocked]
@@ -127,13 +128,17 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   /// will also never finish. In that case do not await [reload], or ensure
   /// your [fromNetwork] method finished (timeouts etc.).
   Future<void> reload({bool force = false}) async {
+    if (isClosed) {
+      throw StateError('Delegate is already closed');
+    }
+
     if (isLocked) {
       return;
     }
 
     if (force) {
       await clearCache();
-      _emit(const Data(isLoading: true));
+      emit(const Data(isLoading: true));
     }
 
     await fetch();
@@ -151,7 +156,13 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   @override
   void onError(Object error, StackTrace stackTrace) {
     super.onError(error, stackTrace);
-    _emit(state.copyWith(error: error));
+    emit(state.copyWith(error: error));
+  }
+
+  @override
+  Future<void> close() {
+    _fetchSubscription?.cancel();
+    return super.close();
   }
 }
 

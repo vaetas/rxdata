@@ -84,9 +84,13 @@ class _HomeScreenState extends State<HomeScreen> {
           throw Exception(response.body);
         }
 
-        yield ApiResponse.fromJson(
+        final data = ApiResponse.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
+
+        // Using yield allows us to return multiple data values before exiting.
+        // You can utilize this to load data progressively.
+        yield data;
       },
       fromStorage: () async {
         // Uncomment line below to simulate storage IO failure.
