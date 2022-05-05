@@ -1,5 +1,5 @@
 name: example
-description: A new Flutter project.
+description: rxdata example project
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -17,8 +17,7 @@ dependencies:
     path: ../
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  flutter_lints: ^1.0.4
 
 flutter:
   uses-material-design: true

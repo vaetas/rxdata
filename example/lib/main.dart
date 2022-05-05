@@ -1,3 +1,7 @@
+// ignore_for_file: avoid_print
+// ignore_for_file: prefer_const_constructors_in_immutables
+// ignore_for_file: body_might_complete_normally_nullable
+
 import 'dart:convert';
 import 'dart:developer' as dev;
 
@@ -22,6 +26,8 @@ Future<void> main() async {
 }
 
 class ExampleApp extends StatelessWidget {
+  ExampleApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
