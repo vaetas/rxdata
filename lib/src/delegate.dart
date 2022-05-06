@@ -90,25 +90,26 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     isLocked = enabled;
   }
 
-  // TODO: Cancel stream listener on [close].
   /// Fetch data [fromNetwork].
+  ///
+  /// Only one concurrent [fetch] can be run. Lock mechanism is automatically
+  /// used for this. Calling [fetch] while [isLocked] is still true will result
+  /// in immediate return, however no error is thrown.
   Future<void> fetch() async {
     if (isLocked) return;
     _setLocked(true);
 
     emit(state.copyWith(isLoading: true));
 
-    try {
-      await _fetchSubscription?.cancel();
-      _fetchSubscription = fromNetwork().listen(_fetchListener);
-    } catch (e, s) {
-      _updateLastUpdated();
-      onError(e, s);
-    } finally {
-      emit(state.copyWith(isLoading: false));
-    }
-
-    _setLocked(false);
+    await _fetchSubscription?.cancel();
+    _fetchSubscription = fromNetwork().listen(_fetchListener)
+      ..onError((Object e, StackTrace s) {
+        _updateLastUpdated();
+        onError(e, s);
+      })
+      ..onDone(() {
+        _setLocked(false);
+      });
   }
 
   Future<void> _fetchListener(V event) async {
@@ -138,7 +139,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
     if (force) {
       await clearCache();
-      emit(const Data(isLoading: true));
+      emit(Data<V>(isLoading: true));
     }
 
     await fetch();
@@ -156,7 +157,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   @override
   void onError(Object error, StackTrace stackTrace) {
     super.onError(error, stackTrace);
-    emit(state.copyWith(error: error));
+    emit(state.copyWith(error: error, isLoading: false));
   }
 
   @override
