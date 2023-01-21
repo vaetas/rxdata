@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as dev;
 
-import 'package:animated_list/implicitly_animated_reorderable_list.dart';
-import 'package:animated_list/transitions.dart';
+import 'package:animated_list/animated_list.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

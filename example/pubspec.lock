@@ -5,8 +5,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: "4cceb863b2d08258191b728f3a7866d5f1e16a57"
+      ref: "715933d"
+      resolved-ref: "715933d4a92c4eb75e6a8a45564bff21b39b450b"
       url: "https://github.com/vaetas/animated_list.git"
     source: git
     version: "0.4.2"

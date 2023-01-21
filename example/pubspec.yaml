@@ -10,7 +10,9 @@ environment:
 
 dependencies:
   animated_list:
-    git: https://github.com/vaetas/animated_list.git
+    git:
+      url: https://github.com/vaetas/animated_list.git
+      ref: 715933d
   collection: ^1.16.0
   flutter:
     sdk: flutter
