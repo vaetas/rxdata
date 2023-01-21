@@ -1,7 +1,7 @@
-import 'package:equatable/equatable.dart';
+import 'package:collection/collection.dart';
 
 /// Wrapper around your data of type [V].
-class Data<V> extends Equatable {
+class Data<V> {
   const Data({
     this.value,
     this.error,
@@ -44,5 +44,17 @@ class Data<V> extends Equatable {
   }
 
   @override
-  List<Object?> get props => [value, error, isLoading];
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Data &&
+          runtimeType == other.runtimeType &&
+          const DeepCollectionEquality().equals(value, other.value) &&
+          error == other.error &&
+          isLoading == other.isLoading;
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(value) ^
+      error.hashCode ^
+      isLoading.hashCode;
 }

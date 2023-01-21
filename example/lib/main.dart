@@ -1,240 +1,244 @@
-// ignore_for_file: avoid_print
-// ignore_for_file: prefer_const_constructors_in_immutables
-// ignore_for_file: body_might_complete_normally_nullable
-
 import 'dart:convert';
 import 'dart:developer' as dev;
 
+import 'package:animated_list/implicitly_animated_reorderable_list.dart';
+import 'package:animated_list/transitions.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:rxdata/rxdata.dart';
 
 final priceFormat = NumberFormat.currency(name: 'USD', symbol: r'$');
 
-Future<void> main() async {
-  await BlocOverrides.runZoned(
-    () async {
-      await Hive.initFlutter();
-      runApp(ExampleApp());
+ApiResponse? _cache;
+
+void _log(String name, String message) {
+  dev.log(message, name: name);
+}
+
+final delegateProvider =
+    StateNotifierProvider<DataDelegate<ApiResponse>, Data<ApiResponse>>((ref) {
+  final dataDelegate = DataDelegate<ApiResponse>(
+    fromNetwork: () async* {
+      // throw Exception('Failed to fetch data');
+
+      final now = DateTime.now();
+
+      // https://api.coincap.io/v2/assets/bitcoin/history?interval=m1&start=1629051861939&end=1629052461939
+      final uri = Uri(
+        host: 'api.coincap.io',
+        path: 'v2/assets/bitcoin/history',
+        scheme: 'https',
+        queryParameters: <String, dynamic>{
+          'interval': 'm1',
+          'start': now
+              .subtract(const Duration(minutes: 10))
+              .millisecondsSinceEpoch
+              .toString(),
+          'end': now.millisecondsSinceEpoch.toString(),
+        },
+      );
+
+      // await Future<void>.delayed(const Duration(seconds: 1));
+      // throw Exception('Example error. Try pressing reload icon.');
+
+      await Future<void>.delayed(const Duration(seconds: 1));
+
+      final response = await http.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception(response.body);
+      }
+
+      final data = ApiResponse.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+
+      // Using yield allows us to return multiple data values before exiting.
+      // You can utilize this to load data progressively.
+      yield data;
     },
-    blocObserver: SimpleBlocObserver(),
+    fromStorage: () async {
+      // Uncomment line below to simulate storage IO failure.
+      // throw Exception('Failed to load from storage');
+
+      _log('fromStorage', 'looking in storage');
+      final box = await Hive.openBox<String>('storage');
+      final data = box.get('data');
+      if (data == null) {
+        return null;
+      }
+      final json = jsonDecode(data) as Map<String, dynamic>;
+      final result = ApiResponse.fromJson(json);
+      _log('fromStorage', 'found data in storage: $result');
+      return result;
+    },
+    toStorage: (value) async {
+      _log('toStorage', 'saving to storage...');
+      final box = await Hive.openBox<String>('storage');
+      try {
+        await box.put('data', value.toJsonString());
+        _log('toStorage', 'saved to storage');
+      } catch (e, s) {
+        _log('toStorage', 'ERROR: $e');
+        debugPrintStack(stackTrace: s);
+      }
+    },
+    fromMemory: () {
+      _log('fromMemory', 'data in cache: $_cache');
+      return _cache;
+    },
+    toMemory: (value) {
+      _log('toMemory', 'saving data to cache $value');
+      _cache = value;
+    },
+    onClearCache: () async {
+      _log('onClearCache', 'clearing cache');
+      await Hive.deleteBoxFromDisk('storage');
+    },
   );
+  return dataDelegate;
+});
+
+Future<void> main() async {
+  await Hive.initFlutter();
+  runApp(const ExampleApp());
 }
 
 class ExampleApp extends StatelessWidget {
-  ExampleApp({Key? key}) : super(key: key);
+  const ExampleApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return ProviderScope(
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: const HomeScreen(),
       ),
-      // ignore: prefer_const_constructors
-      home: HomeScreen(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends HookConsumerWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = ref.watch(delegateProvider);
+    final dataDelegate = ref.watch(delegateProvider.notifier);
 
-class _HomeScreenState extends State<HomeScreen> {
-  late final DataDelegate<ApiResponse> dataDelegate;
-
-  bool wasErrorThrown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    dataDelegate = DataDelegate(
-      fromNetwork: () async* {
-        // throw Exception('Failed to fetch data');
-
-        final now = DateTime.now();
-
-        // https://api.coincap.io/v2/assets/bitcoin/history?interval=m1&start=1629051861939&end=1629052461939
-        final uri = Uri(
-          host: 'api.coincap.io',
-          path: 'v2/assets/bitcoin/history',
-          scheme: 'https',
-          queryParameters: <String, dynamic>{
-            'interval': 'm1',
-            'start': now
-                .subtract(const Duration(minutes: 10))
-                .millisecondsSinceEpoch
-                .toString(),
-            'end': now.millisecondsSinceEpoch.toString(),
-          },
-        );
-
-        if (!wasErrorThrown) {
-          wasErrorThrown = true;
-          throw Exception('Example error. Try pressing reload icon.');
-        }
-
-        await Future<void>.delayed(const Duration(seconds: 1));
-
-        final response = await http.get(uri);
-
-        if (response.statusCode != 200) {
-          throw Exception(response.body);
-        }
-
-        final data = ApiResponse.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
-
-        // Using yield allows us to return multiple data values before exiting.
-        // You can utilize this to load data progressively.
-        yield data;
-      },
-      fromStorage: () async {
-        // Uncomment line below to simulate storage IO failure.
-        // throw Exception('Failed to load from storage');
-
-        print('[_HomeScreenState.initState] fromStorage');
-        final box = await Hive.openBox<String>('storage');
-        final data = box.get('data');
-        if (data == null) {
-          return null;
-        }
-        final json = jsonDecode(data) as Map<String, dynamic>;
-        return ApiResponse.fromJson(json);
-      },
-      toStorage: (value) async {
-        print('[_HomeScreenState.initState] toStorage');
-        final box = await Hive.openBox<String>('storage');
-        try {
-          await box.put('data', value.toJsonString());
-        } catch (e) {
-          print('ERROR: $e');
-        }
-      },
-      fromMemory: () {
-        print('[_HomeScreenState.initState] fromMemory');
-      },
-      toMemory: (value) {
-        print('[_HomeScreenState.initState] toMemory');
-      },
-      onClearCache: () async {
-        await Hive.deleteBoxFromDisk('storage');
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      body: DataBuilder<ApiResponse>(
-        bloc: dataDelegate,
-        builder: (context, state) {
-          return CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                title: const Text('Example'),
-                pinned: true,
-                actions: [
-                  InkWell(
-                    onTap: dataDelegate.reload,
-                    onLongPress: () => dataDelegate.reload(force: true),
-                    child: const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Icon(Icons.refresh),
-                    ),
-                  ),
-                ],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('Example'),
+            pinned: true,
+            actions: [
+              InkWell(
+                onTap: dataDelegate.reload,
+                onLongPress: () => dataDelegate.reload(force: true),
+                child: const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Icon(Icons.refresh),
+                ),
               ),
-              CupertinoSliverRefreshControl(
-                onRefresh: dataDelegate.reload,
-              ),
-              SliverToBoxAdapter(
+            ],
+          ),
+          CupertinoSliverRefreshControl(
+            onRefresh: dataDelegate.reload,
+          ),
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Center(
                 child: Text('Last updated: ${dataDelegate.lastUpdated}'),
               ),
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Text(
-                        'Fetch BTC price history in the past 10 minutes.',
-                      ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Tooltip(
+                    message:
+                        'Watch that memory cache is used and new load is instant.',
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ref.invalidate(delegateProvider);
+                      },
+                      child: const Text('Invalidate provider'),
                     ),
+                  )
+                ],
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Text(
+                    'Fetch BTC price history in the past 10 minutes.',
                   ),
                 ),
               ),
-              if (state.isLoading)
-                SliverToBoxAdapter(
-                  child: Row(
-                    children: const [
-                      CircularProgressIndicator(),
-                      Text('Loading...')
-                    ],
+            ),
+          ),
+          if (data.isLoading)
+            SliverToBoxAdapter(
+              child: Row(
+                children: const [
+                  CircularProgressIndicator(),
+                  Text('Loading...')
+                ],
+              ),
+            ),
+          if (data.hasError)
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.orangeAccent,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.all(10),
+                child: Text(data.error.toString()),
+              ),
+            ),
+          if (data.hasValue)
+            SliverImplicitlyAnimatedList(
+              items: data.value!.data,
+              itemBuilder: (context, animation, item, i) {
+                return SizeFadeTransition(
+                  sizeFraction: 0.7,
+                  curve: Curves.easeInOut,
+                  animation: animation,
+                  child: ListTile(
+                    title: Text(
+                      priceFormat.format(num.parse(item.priceUsd)),
+                    ),
+                    subtitle: Text(item.date.toLocal().toIso8601String()),
                   ),
-                ),
-              if (state.hasError)
-                SliverToBoxAdapter(
-                  child: Container(
-                    color: Colors.orangeAccent,
-                    padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.all(10),
-                    child: Text(state.error.toString()),
-                  ),
-                ),
-              if (state.hasValue)
-                SliverList(
-                  delegate: SliverChildListDelegate(
-                    state.value!.data.map((e) {
-                      return ListTile(
-                        title: Text(
-                          priceFormat.format(num.parse(e.priceUsd)),
-                        ),
-                        subtitle: Text(e.date.toLocal().toIso8601String()),
-                      );
-                    }).toList(),
-                  ),
-                )
-              else
-                const SliverToBoxAdapter(
-                  child: Text('No data'),
-                ),
-            ],
-          );
-        },
+                );
+              },
+              areItemsTheSame: (oldItem, newItem) {
+                return oldItem.date == newItem.date;
+              },
+            )
+          else
+            const SliverToBoxAdapter(
+              child: Text('No data'),
+            ),
+        ],
       ),
     );
-  }
-}
-
-class SimpleBlocObserver extends BlocObserver {
-  @override
-  void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
-    super.onError(bloc, error, stackTrace);
-    dev.log(
-      'Error',
-      error: error,
-      stackTrace: stackTrace,
-      name: '${bloc.runtimeType}',
-    );
-  }
-
-  @override
-  void onChange(BlocBase bloc, Change change) {
-    super.onChange(bloc, change);
-    if (bloc is DataDelegate<ApiResponse>) {
-      final state = change.nextState as Data<ApiResponse>;
-      print('[SimpleBlocObserver.onChange] Next state $state');
-    }
   }
 }
 

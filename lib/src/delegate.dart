@@ -1,7 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rxdata/src/data.dart';
+import 'package:flutter/foundation.dart';
+import 'package:riverpod/riverpod.dart';
+
+import '/src/data.dart';
 
 /// Delegates fetching and caching behavior of specified [Data] object.
 ///
@@ -9,7 +11,7 @@ import 'package:rxdata/src/data.dart';
 /// provide [onClearCache].
 ///
 /// If [toStorage] or [toMemory] throws then [onClearCache] is called.
-class DataDelegate<V> extends Cubit<Data<V>> {
+class DataDelegate<V> extends StateNotifier<Data<V>> {
   DataDelegate({
     required this.fromNetwork,
     this.fromMemory,
@@ -27,26 +29,34 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   }
 
   /// HTTP request to obtain data from your API
-  final _FromNetwork<V> fromNetwork;
+  @protected
+  final FromNetworkCallback<V> fromNetwork;
 
   /// Load cached data from memory. This cannot be async.
-  final _FromMemory<V>? fromMemory;
+  @protected
+  final FromMemoryCallback<V>? fromMemory;
 
   /// Save data into memory cache.
-  final _ToMemory<V>? toMemory;
+  @protected
+  final ToMemoryCallback<V>? toMemory;
 
   /// Load data from storage. This could be SQLite, shared_preferences etc.
-  final _FromStorage<V>? fromStorage;
+  @protected
+  final FromStorageCallback<V>? fromStorage;
 
   /// Persist data into storage.
-  final _ToStorage<V>? toStorage;
+  @protected
+  final ToStorageCallback<V>? toStorage;
 
   /// Define how to clear memory & storage cache.
-  final _ClearCache? onClearCache;
+  @protected
+  final ClearCacheCallback? onClearCache;
+
+  bool _isLocked = false;
 
   /// Whether there already is ongoing network request. Only one request is
   /// allowed at the time.
-  bool isLocked = false;
+  bool get isLocked => _isLocked;
 
   /// [DateTime] of last [fromNetwork] call. This will be updated when
   /// [fromNetwork] call either succeeds or fails. You can use this value to
@@ -66,12 +76,12 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     try {
       final memoryValue = fromMemory?.call();
       if (memoryValue != null) {
-        emit(Data(value: memoryValue));
+        state = Data(value: memoryValue);
       } else {
         await _loadFromStorage();
       }
     } catch (e, s) {
-      onError(e, s);
+      _handleError(e, s);
       await clearCache();
     }
 
@@ -81,13 +91,13 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   Future<void> _loadFromStorage() async {
     final value = await fromStorage?.call();
     if (value != null) {
-      emit(state.copyWith(value: value));
+      state = state.copyWith(value: value);
       toMemory?.call(value);
     }
   }
 
   void _setLocked(bool enabled) {
-    isLocked = enabled;
+    _isLocked = enabled;
   }
 
   /// Fetch data [fromNetwork].
@@ -95,17 +105,18 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   /// Only one concurrent [fetch] can be run. Lock mechanism is automatically
   /// used for this. Calling [fetch] while [isLocked] is still true will result
   /// in immediate return, however no error is thrown.
+  @protected
   Future<void> fetch() async {
     if (isLocked) return;
     _setLocked(true);
 
-    emit(state.copyWith(isLoading: true));
+    state = state.copyWith(isLoading: true);
 
     await _fetchSubscription?.cancel();
     _fetchSubscription = fromNetwork().listen(_fetchListener)
       ..onError((Object e, StackTrace s) {
         _updateLastUpdated();
-        onError(e, s);
+        _handleError(e, s);
       })
       ..onDone(() {
         _setLocked(false);
@@ -114,7 +125,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
   Future<void> _fetchListener(V event) async {
     _updateLastUpdated();
-    emit(Data(value: event));
+    state = Data(value: event);
     toMemory?.call(event);
     await toStorage?.call(event);
   }
@@ -129,8 +140,8 @@ class DataDelegate<V> extends Cubit<Data<V>> {
   /// will also never finish. In that case do not await [reload], or ensure
   /// your [fromNetwork] method finished (timeouts etc.).
   Future<void> reload({bool force = false}) async {
-    if (isClosed) {
-      throw StateError('Delegate is already closed');
+    if (!mounted) {
+      throw StateError('Delegate is already disposed');
     }
 
     if (isLocked) {
@@ -139,7 +150,7 @@ class DataDelegate<V> extends Cubit<Data<V>> {
 
     if (force) {
       await clearCache();
-      emit(Data<V>(isLoading: true));
+      state = Data<V>(isLoading: true);
     }
 
     await fetch();
@@ -154,25 +165,23 @@ class DataDelegate<V> extends Cubit<Data<V>> {
     _lastUpdated = DateTime.now();
   }
 
-  @override
-  void onError(Object error, StackTrace stackTrace) {
-    super.onError(error, stackTrace);
-    emit(state.copyWith(error: error, isLoading: false));
+  void _handleError(Object e, StackTrace s) {
+    state = state.copyWith(error: e, isLoading: false);
   }
 
   @override
-  Future<void> close() {
+  void dispose() {
     _fetchSubscription?.cancel();
-    return super.close();
+    super.dispose();
   }
 }
 
-typedef _FromNetwork<V> = Stream<V> Function();
+typedef FromNetworkCallback<V> = Stream<V> Function();
 
-typedef _FromMemory<V> = V? Function();
-typedef _ToMemory<V> = void Function(V value);
+typedef FromMemoryCallback<V> = V? Function();
+typedef ToMemoryCallback<V> = void Function(V value);
 
-typedef _FromStorage<V> = Future<V?> Function();
-typedef _ToStorage<V> = Future<void> Function(V value);
+typedef FromStorageCallback<V> = Future<V?> Function();
+typedef ToStorageCallback<V> = Future<void> Function(V value);
 
-typedef _ClearCache = Future<void> Function();
+typedef ClearCacheCallback = Future<void> Function();

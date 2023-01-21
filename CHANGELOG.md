@@ -1,3 +1,8 @@
+## 1.0.0
+
+* BREAKING: Migrated to Riverpod.
+    * `flutter_bloc` is not supported anymore.
+
 ## 0.8.0
 
 * fix: prevent emit after closing delegate
